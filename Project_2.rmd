@@ -48,7 +48,7 @@ head(data)
 
 ### Events Most Harmful to Population Health
 
-In the first analysis, we aim to find what disaster events are the most harmful to population health. We examine the storm data and focus on the fatality and injury counts. We first find all unique disaster event types by converting event types into all uppercase representation. Then for each diaster event type, we find the total count of the number of fatalities or injuries. We then sort the counts in descending order to find the disaster event types causing the most harm to human health. We sort first using the fataly counts and then using the injury counts.   
+In the first analysis, we aim to find what disaster events are the most harmful to population health. We examine the storm data and focus on the fatality and injury counts. We first find all unique disaster event types by converting event types into all uppercase representation. Then for each diaster event type, we find the total count of the number of fatalities or injuries. We then sort the counts in descending order to find the disaster event types causing the most harm to human health. We sort first using the fatality counts and then using the injury counts.   
 
 ```{r}
 # extract event type, fatality, and injury data to form a new data frame 
@@ -91,64 +91,106 @@ legend("topright", legend=c("Fatality", "Injury"), inset=c(-0.15, 0), fill=cbind
 From the above figure, we can see that tornado, excessive heat, and flash flood are the three top disaster types that cause the most harm to population health (fatality and injury). 
 
 
-### Events Most Damaging to Property 
-For the second analysis, we examine the damage to property caused by each disaster event. We first transform all dollar values of the property damage to the same unit. We then conduct a similar analysis to the first part where we find the total amount of damage caused by each disaster type. The final ranked results will be shown in a table and a figure. 
+### Events Most Damaging to Economy
+For the second analysis, we examine the damage to property and crops caused by each disaster event. We first transform all dollar values of the property damage and crop damage to the same unit. We then conduct a similar analysis to the first part where we find the total amount of damage caused by each disaster type. The final ranked results of total property and crop damage will be shown in a table and a figure. 
 
 ```{r}
-# extract propery damage values 
+# extract propery damage values and crop damage values 
 prop_data <- cbind.data.frame("EVTYPE"=data$EVTYPE, "PROPDMG"=data$PROPDMG)
+crop_data <- cbind.data.frame("EVTYPE"=data$EVTYPE, "CROPDMG"=data$CROPDMG)
 
-# find unique scale factors for the property damage values 
-scales <- unique(data$PROPDMGEXP)
+# number of rows in data 
+nrows <- dim(data)[1]
 
-# initialize a vector to zeros 
-dimen_scale <- matrix(0, nrow=length(data$PROPDMGEXP))
+# a function to convert damage value into real dollar value by multiplying the dimension scale
+find_scale_factors <- function(original_data, nrows) {
+  # initialize to all zeros in a vector 
+  scale_factors <- matrix(0, nrow=length(original_data))
 
-# for each property damage value, convert it into its real number value 
-# based on: https://rstudio-pubs-static.s3.amazonaws.com/58957_37b6723ee52b455990e149edde45e5b6.html
-#     only factors h, H, k, K, m, M, b, and B are considered. 
-#     Other factors are ignored and those rows are treated as zero and will be ranked
-#     at the bottom in sorting. 
-for (irow in 1:length(dimen_scale)) {
-  if (data$PROPDMGEXP[irow] == "K" || data$PROPDMGEXP[irow] == "k") {
-    dimen_scale[irow] <- 1E+3
-  } else if (data$PROPDMGEXP[irow] == "M" || data$PROPDMGEXP[irow] == "m") {
-    dimen_scale[irow] <- 1E+6
-  } else if (data$PROPDMGEXP[irow] == "B" || data$PROPDMGEXP[irow] == "b") {
-    dimen_scale[irow] <- 1E+9
-  } else if (data$PROPDMGEXP[irow] == "H" || data$PROPDMGEXP[irow] == "h") {
-    dimen_scale[irow] <- 1E+2
+  # for each property or crop damage value, convert it into its real number value 
+  # based on: 
+  # https://rstudio-pubs-static.s3.amazonaws.com/58957_37b6723ee52b455990e149edde45e5b6.html
+  #     only factors h, H, k, K, m, M, b, and B are considered. 
+  #     Other factors are ignored and those rows are treated as zero and will be ranked
+  #     at the bottom in sorting. 
+  for (irow in 1:nrows) {
+    if (original_data[irow] == "H" || original_data[irow] == "h") {
+      scale_factors <- 1E+2
+    } else if (original_data[irow] == "K" || original_data[irow] == "k") {
+      scale_factors <- 1E+3
+    } else if (original_data[irow] == "M" || original_data[irow] == "m") {
+      scale_factors <- 1E+6
+    } else if (original_data[irow] == "B" || original_data[irow] == "b") {
+      scale_factors <- 1E+9
+    } 
   }
+  return(scale_factors)
 }
 
-# update the property damage data frame by the dimension scaling factor 
-prop_data$PROPDMG <- prop_data$PROPDMG * dimen_scale 
+# property and crop damage scale factors 
+prop_dimen_scale <- find_scale_factors(data$PROPDMGEXP, nrows)
+crop_dimen_scale <- find_scale_factors(data$CROPDMGEXP, nrows)
+
+# update the property and crop damage data frame by the dimension scaling factor 
+prop_data$PROPDMG <- prop_data$PROPDMG * prop_dimen_scale 
+crop_data$CROPDMG <- crop_data$CROPDMG * crop_dimen_scale 
 
 # form a new data frame using the unique event types 
 prop_count <- matrix(0, nrow=length(ev_types))
+crop_count <- matrix(0, nrow=length(ev_types))
 
 # for each event type, sum up the property damage dollar amount across multiple events 
 for (index in 1:length(ev_types)) {
   evtype <- ev_types[index]
   prop_count[index] <-  sum(prop_data$PROPDMG[prop_data$EVTYPE==evtype])  
+  crop_count[index] <-  sum(crop_data$CROPDMG[crop_data$EVTYPE==evtype])  
 }
 
 # form a data frame to contain the event type and damage dollar totals 
 prop_dam_data <- cbind.data.frame("EVTYPE"=ev_types, "PROPDMG"=prop_count)
+crop_dam_data <- cbind.data.frame("EVTYPE"=ev_types, "CROPDMG"=crop_count)
+# total damage from property and crop 
+eco_data <- cbind.data.frame("EVTYPE"=ev_types, "DMG"=crop_count+prop_count)
 
-# sort prop_dam_data in descending order according to damage dollar amounts 
+# sort prop_dam_data and crop_dam_data in descending order according to damage dollar amounts 
 prop_dam_sorted <- prop_dam_data[order(-prop_dam_data$PROPDMG), ]
+crop_dam_sorted <- crop_dam_data[order(-crop_dam_data$CROPDMG), ]
+# total damage sorted 
+eco_data_sorted <- eco_data[order(-eco_data$DMG), ]
 
-# print out the first 20 event types with the most damage to property
+# print out the first 20 event types with the most damage to property  
 head(prop_dam_sorted, n=20)
 
 # use the top 20 data for plotting 
 top_prop_dam_data <- prop_dam_sorted[1:20, ]
 
 # plot the sorted damage amounts using a barplot for the top 20 diaster types
+par(mfrow=c(3,1)) 
 par(pin=c(4, 8), mai=c(3,1,0.5,1), mgp=c(3,0.5,0), xpd=TRUE) 
 barplot(top_prop_dam_data$PROPDMG, names.arg=top_prop_dam_data$EVTYPE,
 main="Property Damage in Dollars for Top 20 Event Types", col="purple", ylab="Dollars", ylim=c(1,1E+12), log='y', las=2)
+
+# 
+# print out the first 20 event types with the most damage to crop   
+head(crop_dam_sorted, n=20)
+
+# use the top 20 data for plotting 
+top_crop_dam_data <- crop_dam_sorted[1:20, ]
+
+# plot the sorted damage amounts using a barplot for the top 20 diaster types
+par(pin=c(4, 8), mai=c(3,1,0.5,1), mgp=c(3,0.5,0), xpd=TRUE) 
+barplot(top_crop_dam_data$CROPDMG, names.arg=top_crop_dam_data$EVTYPE,
+main="Crop Damage in Dollars for Top 20 Event Types", col="orange", ylab="Dollars", ylim=c(1,1E+12), log='y', las=2)
+
+
+# print out the top 20 events with total damage (property + crop)
+head(eco_data_sorted, n=20)
+
+# use the top 20 data for plotting
+top_eco_data <- eco_data_sorted[1:20, ]
+par(pin=c(4, 8), mai=c(3,1,0.5,1), mgp=c(3,0.5,0), xpd=TRUE) 
+barplot(top_eco_data$DMG, names.arg=top_eco_data$EVTYPE,
+main="Total Damage (Property and Crop) in Dollars for Top 20 Event Types", col="black", ylab="Dollars", ylim=c(1,1E+12), log='y', las=2)
 
 
 ```
