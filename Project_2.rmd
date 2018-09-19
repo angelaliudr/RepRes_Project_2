@@ -18,6 +18,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Synopsis 
 
 ## Data Processing
+The storm data set is downloaded first from "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2" onto the local hard drive. Then the file is read in by R into a data frame for analysis. 
 
 ```{r cache=TRUE}
 
@@ -62,7 +63,7 @@ head(data)
 
 ### Events Most Harmful to Population Health
 
-To find what disaster events are the most harmful to population health, we examine the storm data and focus on the fatality and injury counts. We first find the number of unique disaster event types. Then for each diaster event type, we find the total count of the number of fatalities or injuries. We then sort the counts in descending order to find the disaster event types causing the most harm to human health. We sort first using the fataly counts and then using the injury counts.   
+In the first analysis, we aim to find what disaster events are the most harmful to population health. We examine the storm data and focus on the fatality and injury counts. We first find the number of unique disaster event types. Then for each diaster event type, we find the total count of the number of fatalities or injuries. We then sort the counts in descending order to find the disaster event types causing the most harm to human health. We sort first using the fataly counts and then using the injury counts.   
 
 ```{r}
 # extract event type, fatality, and injury data to form a new data frame 
