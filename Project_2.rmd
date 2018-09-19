@@ -10,31 +10,18 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-#library()
+require(grDevices)
 ```
 
-# Storm Data Analysis in R 
+# Storm Data Analysis to Identify the Most Damaging Disaster Types to Population Health and Economy 
 
 ## Synopsis 
+Severe weathers are natural disaters that could adversely affect human beings by killing or injuring people and damaging their properties or crops. In this report, the National Climatic Data Center Storm Events data set is analyzed to identify the disaster types that result in the most severe damages. We use fatality rate, injury, property damage, and crop damage as the main metrics to assess the damage of each diaster type to people and to the economy. We found that tornado, heat, and flood are the top three disaster types incurring the most damage to people, based on the fatality and injury data. In comparison, flood, hurricane/typoon, and tornado are the top three disaster types causing the most property damage. Accurate forecast and emergency preparedness for these types of disasters, therefore, are of paramount importance in saving people's lives and minimizing property damage. 
 
 ## Data Processing
 The storm data set is downloaded first from "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2" onto the local hard drive. Then the file is read in by R into a data frame for analysis. 
 
 ```{r cache=TRUE}
-
-
-# Read in raw data
-
-# Save the first 30 rows as a test set for debugging 
-#data <- read.csv("data_header_rows.csv.bz2", header=TRUE, sep=",")
-
-# save a few rows with column problems as a test data set
-#data <- read.csv("row_problem_sample.csv.bz2", header=TRUE, 
-#data <- read.csv("quote_in_text_example.csv.bz2", header=TRUE, 
-#                 sep=",", quote="\"")
-#                 strip.white=TRUE)  # this is not useful
-#                 skipNul=TRUE)      # this is not useful 
-
 # download bz2 file to local folder
 weblink <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
 destfile <- "storm_data.csv.bz2"
@@ -57,25 +44,23 @@ head(data)
 ```
 
 
-
-
 ## Results
 
 ### Events Most Harmful to Population Health
 
-In the first analysis, we aim to find what disaster events are the most harmful to population health. We examine the storm data and focus on the fatality and injury counts. We first find the number of unique disaster event types. Then for each diaster event type, we find the total count of the number of fatalities or injuries. We then sort the counts in descending order to find the disaster event types causing the most harm to human health. We sort first using the fataly counts and then using the injury counts.   
+In the first analysis, we aim to find what disaster events are the most harmful to population health. We examine the storm data and focus on the fatality and injury counts. We first find all unique disaster event types by converting event types into all uppercase representation. Then for each diaster event type, we find the total count of the number of fatalities or injuries. We then sort the counts in descending order to find the disaster event types causing the most harm to human health. We sort first using the fataly counts and then using the injury counts.   
 
 ```{r}
 # extract event type, fatality, and injury data to form a new data frame 
 health_data <- cbind.data.frame("EVTYPE"=data$EVTYPE, "FATAL"=data$FATALITIES, "INJUR"=data$INJURIES)
 
-# find unique (formatted to be uppercase) 
-#     event types 
+# find unique (formatted to be uppercase) event types 
 ev_types <- unique(toupper(health_data$EVTYPE))
 
 # form a new data frame using the unique event types 
 dam_count <- matrix(0, ncol=2, nrow=length(ev_types))
 
+# for each event type, sum up the fatality and injury counts across multiple events 
 for (index in 1:length(ev_types)) {
   evtype <- ev_types[index]
   dam_count[index, 1] <-  sum(health_data$FATAL[health_data$EVTYPE==evtype]) 
@@ -85,28 +70,17 @@ for (index in 1:length(ev_types)) {
 # form a data frame to contain the event type and damage count data (both fatality and injury)
 dam_data <- cbind.data.frame("EVTYPE"=ev_types, "FATCNT"=dam_count[, 1], "INJCNT"=dam_count[, 2])
 
-# now sort dam_data in descending order according to fatality first and then according to injuries 
-
+# sort dam_data in descending order according to fatality first and then according to injuries 
 dam_sorted <- dam_data[order(-dam_data$FATCNT, -dam_data$INJCNT), ]
 
-# print out the first 20 event types with the most damage to health, i.e., with the highest fatality rate and injury counts 
+# print out the first 20 event types with the most damage to health, i.e., 
+#     with the highest fatality rate and injury counts 
 head(dam_sorted, n=20)
 
+# use the top 20 data for plotting 
 top_dam_data <- dam_sorted[1:20, ]
 
-# we then plot the sorted damage counts using a barplot for the first 10 diaster types
-require(grDevices)
-
-
-#barplot(top_dam_data$FATCNT, names.arg=top_dam_data$EVTYPE,
-#main="Fatality Counts for Top 20 Event Types", col="red", ylab="Counts", ylim=c(1,6000), log='y', las=2)
-
-
-#barplot(top_dam_data$INJCNT, names.arg=top_dam_data$EVTYPE,
-#main="Injury Counts for Top 20 Event Types", col="blue", ylab="Counts", ylim=c(1,92000), log='y', las=2)
-
-
-#dev.new(width=8, height=16, units="in")
+# plot the sorted damage counts using a barplot for the top 20 diaster types
 par(pin=c(4, 8), mai=c(3,1,0.5,1), mgp=c(3,0.5,0), xpd=TRUE) 
 barplot(rbind(top_dam_data$FATCNT, top_dam_data$INJCNT), beside=TRUE, names.arg=top_dam_data$EVTYPE,
 main="Fatality and Injury Counts for Top 20 Event Types", col=cbind("red", "blue"), ylab="Counts", ylim=c(1,1000000), log='y', las=2)
@@ -114,8 +88,75 @@ legend("topright", legend=c("Fatality", "Injury"), inset=c(-0.15, 0), fill=cbind
 
 ```
 
+From the above figure, we can see that tornado, excessive heat, and flash flood are the three top disaster types that cause the most harm to population health (fatality and injury). 
 
+
+### Events Most Damaging to Property 
+For the second analysis, we examine the damage to property caused by each disaster event. We first transform all dollar values of the property damage to the same unit. We then conduct a similar analysis to the first part where we find the total amount of damage caused by each disaster type. The final ranked results will be shown in a table and a figure. 
+
+```{r}
+# extract propery damage values 
+prop_data <- cbind.data.frame("EVTYPE"=data$EVTYPE, "PROPDMG"=data$PROPDMG)
+
+# find unique scale factors for the property damage values 
+scales <- unique(data$PROPDMGEXP)
+
+# initialize a vector to zeros 
+dimen_scale <- matrix(0, nrow=length(data$PROPDMGEXP))
+
+# for each property damage value, convert it into its real number value 
+# based on: https://rstudio-pubs-static.s3.amazonaws.com/58957_37b6723ee52b455990e149edde45e5b6.html
+#     only factors h, H, k, K, m, M, b, and B are considered. 
+#     Other factors are ignored and those rows are treated as zero and will be ranked
+#     at the bottom in sorting. 
+for (irow in 1:length(dimen_scale)) {
+  if (data$PROPDMGEXP[irow] == "K" || data$PROPDMGEXP[irow] == "k") {
+    dimen_scale[irow] <- 1E+3
+  } else if (data$PROPDMGEXP[irow] == "M" || data$PROPDMGEXP[irow] == "m") {
+    dimen_scale[irow] <- 1E+6
+  } else if (data$PROPDMGEXP[irow] == "B" || data$PROPDMGEXP[irow] == "b") {
+    dimen_scale[irow] <- 1E+9
+  } else if (data$PROPDMGEXP[irow] == "H" || data$PROPDMGEXP[irow] == "h") {
+    dimen_scale[irow] <- 1E+2
+  }
+}
+
+# update the property damage data frame by the dimension scaling factor 
+prop_data$PROPDMG <- prop_data$PROPDMG * dimen_scale 
+
+# form a new data frame using the unique event types 
+prop_count <- matrix(0, nrow=length(ev_types))
+
+# for each event type, sum up the property damage dollar amount across multiple events 
+for (index in 1:length(ev_types)) {
+  evtype <- ev_types[index]
+  prop_count[index] <-  sum(prop_data$PROPDMG[prop_data$EVTYPE==evtype])  
+}
+
+# form a data frame to contain the event type and damage dollar totals 
+prop_dam_data <- cbind.data.frame("EVTYPE"=ev_types, "PROPDMG"=prop_count)
+
+# sort prop_dam_data in descending order according to damage dollar amounts 
+prop_dam_sorted <- prop_dam_data[order(-prop_dam_data$PROPDMG), ]
+
+# print out the first 20 event types with the most damage to property
+head(prop_dam_sorted, n=20)
+
+# use the top 20 data for plotting 
+top_prop_dam_data <- prop_dam_sorted[1:20, ]
+
+# plot the sorted damage amounts using a barplot for the top 20 diaster types
+par(pin=c(4, 8), mai=c(3,1,0.5,1), mgp=c(3,0.5,0), xpd=TRUE) 
+barplot(top_prop_dam_data$PROPDMG, names.arg=top_prop_dam_data$EVTYPE,
+main="Property Damage in Dollars for Top 20 Event Types", col="purple", ylab="Dollars", ylim=c(1,1E+12), log='y', las=2)
+
+
+```
+
+From the above figure, we can see that flood, hurricane/typhoon, and tornado are the three diaster types that cause the most property damage. 
 
 
 ## Conclusion 
+
+We analyzed the National Climatic Data Center Storm Events data from 1950 to 2011. We found from our analyses that tornado, heat, and flood are the top three disaster types incurring the most damage to people, based on the fatality and injury data. In comparison, flood, hurricane/typoon, and tornado are the top three disaster types causing the most property damage. Accurate forecast and emergency preparedness for these several types of disasters, therefore, are of paramount importance in saving people's lives and minimizing property damage. 
 
