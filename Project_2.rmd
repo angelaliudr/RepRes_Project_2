@@ -9,15 +9,20 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
+#library()
+```
+
 # Storm Data Analysis in R 
 
 ## Synopsis 
 
 ## Data Processing
 
-```{r}
+```{r cache=TRUE}
+
+
 # Read in raw data
-weblink <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
 
 # Save the first 30 rows as a test set for debugging 
 #data <- read.csv("data_header_rows.csv.bz2", header=TRUE, sep=",")
@@ -25,19 +30,91 @@ weblink <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv
 # save a few rows with column problems as a test data set
 #data <- read.csv("row_problem_sample.csv.bz2", header=TRUE, 
 #data <- read.csv("quote_in_text_example.csv.bz2", header=TRUE, 
-#                 sep=",", quote="\"", strip.white=TRUE,
-#                 skipNul=TRUE)
+#                 sep=",", quote="\"")
+#                 strip.white=TRUE)  # this is not useful
+#                 skipNul=TRUE)      # this is not useful 
 
-data <- read.csv(url(weblink), header=TRUE, sep=",", 
-                 quote="\"", strip.white=TRUE, skipNul=TRUE)
+# download bz2 file to local folder
+weblink <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
+destfile <- "storm_data.csv.bz2"
+success_code <- 0
 
+# if file has not been downloaded, download it to local folder
+if(!file.exists(destfile)){
+  success_code <- download.file(weblink, destfile)
+}
+
+# if file has been successfully downloaded, read it into a data frame 
+if (success_code == 0) {
+  data <- read.csv(destfile, header=TRUE, sep=",", quote="\"")
+}
+
+# visually inspect the data frame structure and first a few rows 
+str(data)
 head(data)
 
 ```
 
 
 
+
 ## Results
+
+### Events Most Harmful to Population Health
+
+To find what disaster events are the most harmful to population health, we examine the storm data and focus on the fatality and injury counts. We first find the number of unique disaster event types. Then for each diaster event type, we find the total count of the number of fatalities or injuries. We then sort the counts in descending order to find the disaster event types causing the most harm to human health. We sort first using the fataly counts and then using the injury counts.   
+
+```{r}
+# extract event type, fatality, and injury data to form a new data frame 
+health_data <- cbind.data.frame("EVTYPE"=data$EVTYPE, "FATAL"=data$FATALITIES, "INJUR"=data$INJURIES)
+
+# find unique (formatted to be uppercase) 
+#     event types 
+ev_types <- unique(toupper(health_data$EVTYPE))
+
+# form a new data frame using the unique event types 
+dam_count <- matrix(0, ncol=2, nrow=length(ev_types))
+
+for (index in 1:length(ev_types)) {
+  evtype <- ev_types[index]
+  dam_count[index, 1] <-  sum(health_data$FATAL[health_data$EVTYPE==evtype]) 
+  dam_count[index, 2] <-  sum(health_data$INJUR[health_data$EVTYPE==evtype])  
+}
+
+# form a data frame to contain the event type and damage count data (both fatality and injury)
+dam_data <- cbind.data.frame("EVTYPE"=ev_types, "FATCNT"=dam_count[, 1], "INJCNT"=dam_count[, 2])
+
+# now sort dam_data in descending order according to fatality first and then according to injuries 
+
+dam_sorted <- dam_data[order(-dam_data$FATCNT, -dam_data$INJCNT), ]
+
+# print out the first 20 event types with the most damage to health, i.e., with the highest fatality rate and injury counts 
+head(dam_sorted, n=20)
+
+top_dam_data <- dam_sorted[1:20, ]
+
+# we then plot the sorted damage counts using a barplot for the first 10 diaster types
+require(grDevices)
+
+
+#barplot(top_dam_data$FATCNT, names.arg=top_dam_data$EVTYPE,
+#main="Fatality Counts for Top 20 Event Types", col="red", ylab="Counts", ylim=c(1,6000), log='y', las=2)
+
+
+#barplot(top_dam_data$INJCNT, names.arg=top_dam_data$EVTYPE,
+#main="Injury Counts for Top 20 Event Types", col="blue", ylab="Counts", ylim=c(1,92000), log='y', las=2)
+
+
+#dev.new(width=8, height=16, units="in")
+par(pin=c(4, 8), mai=c(3,1,0.5,1), mgp=c(3,0.5,0), xpd=TRUE) 
+barplot(rbind(top_dam_data$FATCNT, top_dam_data$INJCNT), beside=TRUE, names.arg=top_dam_data$EVTYPE,
+main="Fatality and Injury Counts for Top 20 Event Types", col=cbind("red", "blue"), ylab="Counts", ylim=c(1,1000000), log='y', las=2)
+legend("topright", legend=c("Fatality", "Injury"), inset=c(-0.15, 0), fill=cbind("red", "blue"))
+
+```
+
+
+
 
 ## Conclusion 
 
