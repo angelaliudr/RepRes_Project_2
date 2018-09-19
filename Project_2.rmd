@@ -1,0 +1,43 @@
+---
+title: "Storm_Data_Analysis_Project_2"
+author: "Angela Liu"
+date: "September 17, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Storm Data Analysis in R 
+
+## Synopsis 
+
+## Data Processing
+
+```{r}
+# Read in raw data
+weblink <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
+
+# Save the first 30 rows as a test set for debugging 
+#data <- read.csv("data_header_rows.csv.bz2", header=TRUE, sep=",")
+
+# save a few rows with column problems as a test data set
+#data <- read.csv("row_problem_sample.csv.bz2", header=TRUE, 
+#data <- read.csv("quote_in_text_example.csv.bz2", header=TRUE, 
+#                 sep=",", quote="\"", strip.white=TRUE,
+#                 skipNul=TRUE)
+
+data <- read.csv(url(weblink), header=TRUE, sep=",", 
+                 quote="\"", strip.white=TRUE, skipNul=TRUE)
+
+head(data)
+
+```
+
+
+
+## Results
+
+## Conclusion 
+
