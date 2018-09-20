@@ -1,22 +1,31 @@
 ---
-title: "Storm_Data_Analysis_Project_2"
+title: "Storm Data Analysis to Identify the Most Damaging Disaster Types to Population Health and Economy"
 author: "Angela Liu"
 date: "September 17, 2018"
-output: html_document
+output: 
+  bookdown::html_document2:
+    fig_caption: yes
 ---
+
+<style>
+p.caption {
+  font-size: 1.5em;
+}
+</style>
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(eval.after = 'fig.cap')
 ```
 
-# Storm Data Analysis to Identify the Most Damaging Disaster Types to Population Health and Economy 
 
-## Synopsis 
-Severe weathers are natural disaters that could adversely affect human beings by killing or injuring people and damaging their properties or crops. In this report, the National Climatic Data Center Storm Events data set is analyzed to identify the disaster types that result in the most severe damages. We use fatality rate, injury, property damage, and crop damage as the main metrics to assess the damage of each diaster type to people and to the economy. We found that tornado, heat, and flood are the top three disaster types incurring the most damage to people, based on the fatality and injury data. In comparison, flood, hurricane/typoon, and tornado are the top three disaster types causing the most property damage. Accurate forecast and emergency preparedness for these types of disasters, therefore, are of paramount importance in saving people's lives and minimizing property damage. 
+# Synopsis 
+Severe weather often lead to natural disaters that could adversely affect human beings by killing or injuring people and damaging their properties or crops. In this report, the U.S. National Oceanic and Atmospheric Administration's (NOAA) storm data set is analyzed to identify the weather event types that result in the most severe damages. We use fatality rate, injury, property damage, and crop damage as the main metrics to assess the damage of each weather event type to people and to the economy. We found that tornado, heat, and flood are the top three disaster types incurring the most damage to people, based on the fatality and injury data. In comparison, tornado, flood, and wind are found to be the top three disaster types causing the most economical loss due to property and crop damage. Limitations of this work and future studies are also outlined. 
 
 
-## Data Processing
-The storm data set is downloaded first from "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2" onto the local hard drive. Then the file is read in by R into a data frame for analysis. 
+# Data Processing
+The U.S. National Oceanic and Atmospheric Administration's (NOAA) storm data set is downloaded from "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2" onto the local hard drive. Then the file is read in by R into a data frame for analysis. 
 
 ```{r}
 require(grDevices)
@@ -44,14 +53,14 @@ head(data)
 
 ```
 
+# Results
 
-## Results
+## Events Most Harmful to Population Health
 
-### Events Most Harmful to Population Health
+In the first part of the analysis, we aim to find what disaster events are the most harmful to population health. We examine the storm data and focus on the fatality and injury counts. We first find all unique disaster event types by converting event types into all uppercase representation. Then for each diaster event type, we find the total count of the number of fatalities or injuries. We then sort the counts in descending order to find the disaster event types causing the most harm to human health. We sort first using the fatality counts and then using the injury counts. A bar plot showing the top 20 event types summarizes this finding graphically.    
 
-In the first analysis, we aim to find what disaster events are the most harmful to population health. We examine the storm data and focus on the fatality and injury counts. We first find all unique disaster event types by converting event types into all uppercase representation. Then for each diaster event type, we find the total count of the number of fatalities or injuries. We then sort the counts in descending order to find the disaster event types causing the most harm to human health. We sort first using the fatality counts and then using the injury counts.   
 
-```{r health_analysis}
+```{r health-analysis, fig.cap="Top 20 weather event types with the most damage to population health."}
 # extract event type, fatality, and injury data to form a new data frame 
 health_data <- cbind.data.frame("EVTYPE"=data$EVTYPE, "FATAL"=data$FATALITIES, "INJUR"=data$INJURIES)
 
@@ -82,18 +91,19 @@ head(dam_sorted, n=20)
 top_dam_data <- dam_sorted[1:20, ]
 
 # plot the sorted damage counts using a barplot for the top 20 diaster types
-par(pin=c(4, 8), mai=c(3,1,0.5,1), mgp=c(3,0.5,0), xpd=TRUE) 
+par(mai=c(3,1,0.5,1), mgp=c(3,0.5,0), xpd=TRUE) 
 barplot(rbind(top_dam_data$FATCNT, top_dam_data$INJCNT), beside=TRUE, names.arg=top_dam_data$EVTYPE,
-main="Fatality and Injury Counts for Top 20 Event Types", col=cbind("red", "blue"), ylab="Counts", ylim=c(1,1000000), log='y', las=2)
-legend("topright", legend=c("Fatality", "Injury"), inset=c(-0.15, 0), fill=cbind("red", "blue"))
+main="Fatality and Injury Counts for Top 20 Event Types", col=cbind("purple", "orange"), ylab="Counts", ylim=c(1,1000000), log='y', las=2)
+legend("topright", legend=c("Fatality", "Injury"), inset=c(-0.15, 0), fill=cbind("purple", "orange"))
 
 ```
 
-From the above figure, we can see that tornado, excessive heat, and flash flood are the three top disaster types that cause the most harm to population health (fatality and injury). 
+
+From Figure \@ref(fig:health-analysis), we can see that tornado, excessive heat, and flash flood are the three top adverse weather types that cause the most harm to population health (fatality and injury). 
 
 
-### Events Most Damaging to Economy
-For the second analysis, we examine the damage to property and crops caused by each disaster event. We first transform all dollar values of the property damage and crop damage to the same unit. We then conduct a similar analysis to the first part where we find the total amount of damage caused by each disaster type. The final ranked results of total property and crop damage will be shown in a table and a figure. 
+## Events Most Damaging to Economy
+For the second part of the analysis, we examine the damage to property and crops caused by each adverse weather event. We first transform all dollar values of the property damage and crop damage to the same unit in dollars. We then conduct a similar analysis to the first part where we find the total amount of damage caused by each event type. The final ranked results of total property and crop damage will be shown in a table and a bar plot. 
 
 ```{r property_crop_analysis}
 # extract propery damage values and crop damage values 
@@ -136,75 +146,51 @@ crop_dimen_scale <- find_scale_factors(data$CROPDMGEXP, nrows)
 prop_data$PROPDMG <- prop_data$PROPDMG * prop_dimen_scale 
 crop_data$CROPDMG <- crop_data$CROPDMG * crop_dimen_scale 
 
-# form a new data frame using the unique event types 
-prop_count <- matrix(0, nrow=length(ev_types))
-crop_count <- matrix(0, nrow=length(ev_types))
+# form a new data frame to store the damage dollar amount using the unique event types 
+dam_amount <- matrix(0, nrow=length(ev_types))
 
-# for each event type, sum up the property damage dollar amount across multiple events 
+# for each event type, sum up the property and crop damage dollar amount across multiple events 
 for (index in 1:length(ev_types)) {
   evtype <- ev_types[index]
-  prop_count[index] <-  sum(prop_data$PROPDMG[prop_data$EVTYPE==evtype])  
-  crop_count[index] <-  sum(crop_data$CROPDMG[crop_data$EVTYPE==evtype])  
+  dam_amount[index] <-  sum(prop_data$PROPDMG[prop_data$EVTYPE==evtype]) + sum(crop_data$CROPDMG[crop_data$EVTYPE==evtype])  
 }
 
 # form a data frame to contain the event type and damage dollar totals 
-prop_dam_data <- cbind.data.frame("EVTYPE"=ev_types, "PROPDMG"=prop_count)
-crop_dam_data <- cbind.data.frame("EVTYPE"=ev_types, "CROPDMG"=crop_count)
-# total damage from property and crop 
-eco_data <- cbind.data.frame("EVTYPE"=ev_types, "DMG"=crop_count+prop_count)
+eco_data <- cbind.data.frame("EVTYPE"=ev_types, "DMG"=dam_amount)
 
-# sort prop_dam_data and crop_dam_data in descending order according to damage dollar amounts 
-prop_dam_sorted <- prop_dam_data[order(-prop_dam_data$PROPDMG), ]
-crop_dam_sorted <- crop_dam_data[order(-crop_dam_data$CROPDMG), ]
-# total damage sorted 
+# total damage sorted in descending order of dollar amount 
 eco_data_sorted <- eco_data[order(-eco_data$DMG), ]
 
-# print out the first 20 event types with the most damage to property  
-head(prop_dam_sorted, n=20)
 ```
 
-```{r property_plot}
-# use the top 20 data for plotting 
-top_prop_dam_data <- prop_dam_sorted[1:20, ]
-
-# plot the sorted damage amounts using a barplot for the top 20 diaster types
-#par(mfrow=c(3,1)) 
-par(pin=c(4, 8), mai=c(3,1,0.5,1), mgp=c(3,0.5,0), xpd=TRUE) 
-barplot(top_prop_dam_data$PROPDMG, names.arg=top_prop_dam_data$EVTYPE,
-main="Property Damage in Dollars for Top 20 Event Types", col="purple", ylab="Dollars", ylim=c(1,1E+12), log='y', las=2)
-```
-
-```{r crop_plot}
-# 
-# print out the first 20 event types with the most damage to crop   
-head(crop_dam_sorted, n=20)
-
-# use the top 20 data for plotting 
-top_crop_dam_data <- crop_dam_sorted[1:20, ]
-
-# plot the sorted damage amounts using a barplot for the top 20 diaster types
-par(pin=c(4, 8), mai=c(3,1,0.5,1), mgp=c(3,0.5,0), xpd=TRUE) 
-barplot(top_crop_dam_data$CROPDMG, names.arg=top_crop_dam_data$EVTYPE,
-main="Crop Damage in Dollars for Top 20 Event Types", col="orange", ylab="Dollars", ylim=c(1,1E+12), log='y', las=2)
-```
-
-```{r total_plot}
+```{r total-plot, fig.cap="Top 20 weather event types with the most severe economic consequences."}
 # print out the top 20 events with total damage (property + crop)
 head(eco_data_sorted, n=20)
 
 # use the top 20 data for plotting
 top_eco_data <- eco_data_sorted[1:20, ]
-par(pin=c(4, 8), mai=c(3,1,0.5,1), mgp=c(3,0.5,0), xpd=TRUE) 
+par(mai=c(3,1,0.5,1), mgp=c(3,0.5,0), xpd=TRUE) 
 barplot(top_eco_data$DMG, names.arg=top_eco_data$EVTYPE,
-main="Total Damage (Property and Crop) in Dollars for Top 20 Event Types", col="black", ylab="Dollars", ylim=c(1,1E+12), log='y', las=2)
-
+main="Total Damage (Property and Crop) in Dollars for Top 20 Event Types", col="red", ylab="Dollars", ylim=c(1,1E+12), log='y', las=2)
 
 ```
 
-From the above figure, we can see that flood, hurricane/typhoon, and tornado are the three diaster types that cause the most property damage. 
+From Figure \@ref(fig:total-plot), we can see that tornado, flood, and wind are the three diaster types that cause the most property and crop damage. 
 
 
-## Conclusion 
+# Conclusion 
 
-We analyzed the National Climatic Data Center Storm Events data from 1950 to 2011. We found from our analyses that tornado, heat, and flood are the top three disaster types incurring the most damage to people, based on the fatality and injury data. In comparison, flood, hurricane/typoon, and tornado are the top three disaster types causing the most property damage. Accurate forecast and emergency preparedness for these several types of disasters, therefore, are of paramount importance in saving people's lives and minimizing property damage. 
+We analyzed the U.S. National Oceanic and Atmospheric Administration's (NOAA) storm data from 1950 to 2011. We found from our analyses that tornado, heat, and flood are the top three disaster types incurring the most damage to people, based on the fatality and injury data. In comparison, tornado, flood, and wind are the top three disaster types causing the most property and crop damage. Accurate forecast and emergency preparedness for these types of adverse weather events are of paramount importance in saving people's lives and minimizing economical loss. 
+
+
+# Limitations of the Work
+
+As can be seen from Figures \@ref(fig:health-analysis) and \@ref(fig:total-plot), the event types in the NOAA data set are not mutually exclusive. For example, in Figure \@ref(fig:total-plot), we see "TSTM WIND", "THUNDERSTORM WIND" and "THUNDERSTORM WINDS" all appearing among the top 20 event types causing the most damage. According to the NOAA data documentation file (Link: https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf), these event types should all refer to the same adverse weather type, i.e., "thunderstorm wind". Combining the damage amount caused by these three event types will likely change the ranking of which event type is the most damaging. 
+
+Because the goal of this project is to promote reproducible research, if any data cleaning is done to combine the multiple ways one specific event type is called, such cleaning should be thoroughly documented, so that other readers can reproduce the work. 
+
+For simplicity, this report does not include such data cleaning. As a result, the ranking of the most damaging event types will likely not be accurate. Therefore, the results shown in this report should NOT be used in funding decisions for emergency preparedness and planning of adverse weather events.  
+
+Thorough data cleaning is needed as future work so that more conclusive and accurate ranking results can be obtained to guide government funding and emergency planning activities.  
+
 
