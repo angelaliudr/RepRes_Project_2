@@ -165,7 +165,7 @@ head(prop_dam_sorted, n=20)
 top_prop_dam_data <- prop_dam_sorted[1:20, ]
 
 # plot the sorted damage amounts using a barplot for the top 20 diaster types
-par(mfrow=c(3,1)) 
+#par(mfrow=c(3,1)) 
 par(pin=c(4, 8), mai=c(3,1,0.5,1), mgp=c(3,0.5,0), xpd=TRUE) 
 barplot(top_prop_dam_data$PROPDMG, names.arg=top_prop_dam_data$EVTYPE,
 main="Property Damage in Dollars for Top 20 Event Types", col="purple", ylab="Dollars", ylim=c(1,1E+12), log='y', las=2)
