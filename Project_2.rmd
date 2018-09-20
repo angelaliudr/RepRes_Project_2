@@ -9,17 +9,18 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
-require(grDevices)
-```
-
 # Storm Data Analysis to Identify the Most Damaging Disaster Types to Population Health and Economy 
 
 ## Synopsis 
 Severe weathers are natural disaters that could adversely affect human beings by killing or injuring people and damaging their properties or crops. In this report, the National Climatic Data Center Storm Events data set is analyzed to identify the disaster types that result in the most severe damages. We use fatality rate, injury, property damage, and crop damage as the main metrics to assess the damage of each diaster type to people and to the economy. We found that tornado, heat, and flood are the top three disaster types incurring the most damage to people, based on the fatality and injury data. In comparison, flood, hurricane/typoon, and tornado are the top three disaster types causing the most property damage. Accurate forecast and emergency preparedness for these types of disasters, therefore, are of paramount importance in saving people's lives and minimizing property damage. 
 
+
 ## Data Processing
 The storm data set is downloaded first from "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2" onto the local hard drive. Then the file is read in by R into a data frame for analysis. 
+
+```{r}
+require(grDevices)
+```
 
 ```{r cache=TRUE}
 # download bz2 file to local folder
@@ -50,7 +51,7 @@ head(data)
 
 In the first analysis, we aim to find what disaster events are the most harmful to population health. We examine the storm data and focus on the fatality and injury counts. We first find all unique disaster event types by converting event types into all uppercase representation. Then for each diaster event type, we find the total count of the number of fatalities or injuries. We then sort the counts in descending order to find the disaster event types causing the most harm to human health. We sort first using the fatality counts and then using the injury counts.   
 
-```{r}
+```{r health_analysis}
 # extract event type, fatality, and injury data to form a new data frame 
 health_data <- cbind.data.frame("EVTYPE"=data$EVTYPE, "FATAL"=data$FATALITIES, "INJUR"=data$INJURIES)
 
@@ -94,7 +95,7 @@ From the above figure, we can see that tornado, excessive heat, and flash flood 
 ### Events Most Damaging to Economy
 For the second analysis, we examine the damage to property and crops caused by each disaster event. We first transform all dollar values of the property damage and crop damage to the same unit. We then conduct a similar analysis to the first part where we find the total amount of damage caused by each disaster type. The final ranked results of total property and crop damage will be shown in a table and a figure. 
 
-```{r}
+```{r property_crop_analysis}
 # extract propery damage values and crop damage values 
 prop_data <- cbind.data.frame("EVTYPE"=data$EVTYPE, "PROPDMG"=data$PROPDMG)
 crop_data <- cbind.data.frame("EVTYPE"=data$EVTYPE, "CROPDMG"=data$CROPDMG)
@@ -160,7 +161,9 @@ eco_data_sorted <- eco_data[order(-eco_data$DMG), ]
 
 # print out the first 20 event types with the most damage to property  
 head(prop_dam_sorted, n=20)
+```
 
+```{r property_plot}
 # use the top 20 data for plotting 
 top_prop_dam_data <- prop_dam_sorted[1:20, ]
 
@@ -169,7 +172,9 @@ top_prop_dam_data <- prop_dam_sorted[1:20, ]
 par(pin=c(4, 8), mai=c(3,1,0.5,1), mgp=c(3,0.5,0), xpd=TRUE) 
 barplot(top_prop_dam_data$PROPDMG, names.arg=top_prop_dam_data$EVTYPE,
 main="Property Damage in Dollars for Top 20 Event Types", col="purple", ylab="Dollars", ylim=c(1,1E+12), log='y', las=2)
+```
 
+```{r crop_plot}
 # 
 # print out the first 20 event types with the most damage to crop   
 head(crop_dam_sorted, n=20)
@@ -181,8 +186,9 @@ top_crop_dam_data <- crop_dam_sorted[1:20, ]
 par(pin=c(4, 8), mai=c(3,1,0.5,1), mgp=c(3,0.5,0), xpd=TRUE) 
 barplot(top_crop_dam_data$CROPDMG, names.arg=top_crop_dam_data$EVTYPE,
 main="Crop Damage in Dollars for Top 20 Event Types", col="orange", ylab="Dollars", ylim=c(1,1E+12), log='y', las=2)
+```
 
-
+```{r total_plot}
 # print out the top 20 events with total damage (property + crop)
 head(eco_data_sorted, n=20)
 

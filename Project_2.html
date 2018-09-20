@@ -129,7 +129,6 @@ $(document).ready(function () {
 </div>
 
 
-<pre class="r"><code>require(grDevices)</code></pre>
 <div id="storm-data-analysis-to-identify-the-most-damaging-disaster-types-to-population-health-and-economy" class="section level1">
 <h1>Storm Data Analysis to Identify the Most Damaging Disaster Types to Population Health and Economy</h1>
 <div id="synopsis" class="section level2">
@@ -139,6 +138,7 @@ $(document).ready(function () {
 <div id="data-processing" class="section level2">
 <h2>Data Processing</h2>
 <p>The storm data set is downloaded first from “<a href="https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2">https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2</a>” onto the local hard drive. Then the file is read in by R into a data frame for analysis.</p>
+<pre class="r"><code>require(grDevices)</code></pre>
 <pre class="r"><code># download bz2 file to local folder
 weblink &lt;- &quot;https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2&quot;
 destfile &lt;- &quot;storm_data.csv.bz2&quot;
